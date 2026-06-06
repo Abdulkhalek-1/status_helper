@@ -25,9 +25,10 @@ subprojects {
 // Because the block above uses evaluationDependsOn(":app"), some subprojects may
 // already be evaluated here, so configure immediately in that case, else defer.
 subprojects {
-    val forceCompileSdk = {
+    val forceAndroidConfig = {
         val androidExt = extensions.findByName("android")
         if (androidExt != null) {
+            // compileSdk -> 36
             val getter = androidExt.javaClass.methods.firstOrNull { it.name == "getCompileSdk" }
             val setter = androidExt.javaClass.methods.firstOrNull {
                 it.name == "setCompileSdk" &&
@@ -43,9 +44,9 @@ subprojects {
         }
     }
     if (state.executed) {
-        forceCompileSdk()
+        forceAndroidConfig()
     } else {
-        afterEvaluate { forceCompileSdk() }
+        afterEvaluate { forceAndroidConfig() }
     }
 }
 

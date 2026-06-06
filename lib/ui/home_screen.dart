@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../presets/platform_presets.dart';
-import '../core/media_probe.dart';
-import '../core/compatibility.dart';
 import '../services/file_service.dart';
-import 'plan_screen.dart';
+import 'open_plan.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,30 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final path = await _fileService.pickVideo();
       if (path == null) return;
-      final info = await probeMedia(path);
-      final plan = buildFixPlan(info, _preset);
       if (!mounted) return;
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => PlanScreen(
-          inputPath: path,
-          info: info,
-          plan: plan,
-          preset: _preset,
-        ),
-      ));
-    } on FormatException catch (e) {
-      _showError(e.message);
-    } catch (_) {
-      _showError('Something went wrong reading that video.');
+      await openPlanForVideo(context, path, preset: _preset);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
