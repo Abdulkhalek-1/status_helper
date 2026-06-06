@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../presets/platform_presets.dart';
 import '../core/media_probe.dart';
-import '../core/compatibility.dart';
 import 'plan_screen.dart';
 
 /// Probes [path], builds the fix plan for [preset], and pushes the PlanScreen
@@ -19,13 +18,11 @@ Future<void> openPlanForVideo(
   try {
     debugPrint('[share] openPlanForVideo: probing $path');
     final info = await probeMedia(path);
-    final plan = buildFixPlan(info, preset);
     debugPrint('[share] openPlanForVideo: probe OK, pushing PlanScreen');
     navigator.push(MaterialPageRoute(
       builder: (_) => PlanScreen(
         inputPath: path,
         info: info,
-        plan: plan,
         preset: preset,
       ),
     ));

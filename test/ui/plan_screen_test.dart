@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:status_helper/core/media_info.dart';
-import 'package:status_helper/core/compatibility.dart';
 import 'package:status_helper/presets/platform_presets.dart';
 import 'package:status_helper/ui/plan_screen.dart';
 
@@ -20,7 +19,6 @@ Widget _wrap(int seconds) {
     home: PlanScreen(
       inputPath: '/in.mp4',
       info: info,
-      plan: buildFixPlan(info, kDefaultPreset),
       preset: kDefaultPreset,
     ),
   );
