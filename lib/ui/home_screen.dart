@@ -25,6 +25,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context),
         path,
       );
+    } catch (e) {
+      // Surface failures instead of silently doing nothing.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Couldn't open the video picker: $e")),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

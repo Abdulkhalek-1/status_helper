@@ -56,6 +56,12 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // Disable R8 shrinking/obfuscation: without exhaustive keep rules it
+            // breaks reflection-based plugins (file_picker, permission_handler,
+            // ffmpeg_kit) on some devices. The APK size is dominated by native
+            // FFmpeg libs, so shrinking the Dart/Java side saves little anyway.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
