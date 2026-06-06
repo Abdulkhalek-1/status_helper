@@ -1,4 +1,4 @@
-package com.example.status_helper
+package dev.abdulkhalek.statushelper
 
 import io.flutter.embedding.android.FlutterActivity
 

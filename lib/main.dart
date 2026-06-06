@@ -85,7 +85,7 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navKey,
-      title: 'status_helper',
+      title: 'Status Helper',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,

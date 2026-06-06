@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('status_helper')),
+      appBar: AppBar(title: const Text('Status Helper')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
