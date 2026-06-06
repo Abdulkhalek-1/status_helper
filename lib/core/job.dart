@@ -15,5 +15,5 @@ class ConversionJob {
     required this.ops,
     required this.outputDir,
     required this.baseName,
-  });
+  }) : assert(ops.length > 0);
 }

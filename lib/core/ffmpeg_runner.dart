@@ -27,6 +27,7 @@ class FfmpegRunner {
       (sum, op) => sum + _opDurationMs(job, op),
     );
     var completedMs = 0;
+    final safeTotal = totalMs > 0 ? totalMs : 1;
 
     for (final op in job.ops) {
       if (_cancelled) break;
@@ -46,7 +47,7 @@ class FfmpegRunner {
           if (opMs > 0) {
             final frac = (s.getTime() / opMs).clamp(0.0, 1.0);
             onProgress?.call(
-              ((completedMs + frac * opMs) / totalMs).clamp(0.0, 1.0),
+              ((completedMs + frac * opMs) / safeTotal).clamp(0.0, 1.0),
             );
           }
         },
@@ -64,7 +65,7 @@ class FfmpegRunner {
       }
       outputs.add(outPath);
       completedMs += opMs;
-      onProgress?.call((completedMs / totalMs).clamp(0.0, 1.0));
+      onProgress?.call((completedMs / safeTotal).clamp(0.0, 1.0));
     }
 
     if (_cancelled) {
