@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.example.status_helper"
-    compileSdk = flutter.compileSdkVersion
+    // file_picker's transitive flutter_plugin_android_lifecycle requires compileSdk 36+.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
