@@ -20,6 +20,16 @@ const _videoOnly = '''
 }
 ''';
 
+const _with10BitProfile = '''
+{
+  "streams": [
+    {"codec_type": "video", "codec_name": "h264", "width": 1080, "height": 1920,
+     "pix_fmt": "yuv420p10le", "profile": "High 10"}
+  ],
+  "format": {"duration": "12.0", "format_name": "mov,mp4"}
+}
+''';
+
 void main() {
   test('parses codecs, duration and resolution', () {
     final info = parseProbeJson(_hevcWithAudio);
@@ -35,6 +45,18 @@ void main() {
     final info = parseProbeJson(_videoOnly);
     expect(info.videoCodec, 'h264');
     expect(info.audioCodec, isNull);
+  });
+
+  test('parses pixel format and profile', () {
+    final info = parseProbeJson(_with10BitProfile);
+    expect(info.pixelFormat, 'yuv420p10le');
+    expect(info.profile, 'High 10');
+  });
+
+  test('pixelFormat and profile are null when absent', () {
+    final info = parseProbeJson(_videoOnly);
+    expect(info.pixelFormat, isNull);
+    expect(info.profile, isNull);
   });
 
   test('throws FormatException when there is no video stream', () {

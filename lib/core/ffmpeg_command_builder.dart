@@ -14,12 +14,17 @@ String _factor(double f) =>
     f == f.roundToDouble() ? f.round().toString() : f.toString();
 
 /// Builds the full FFmpeg argument list for one [OutputOp].
+///
+/// Set [forceReencode] to re-encode video and audio to the WhatsApp-safe
+/// baseline even when the streams look compatible — the "Convert anyway"
+/// escape hatch for files rejected for reasons we can't detect.
 List<String> buildFfmpegArgs(
   MediaInfo info,
   OutputOp op,
   String inputPath,
-  String outputPath,
-) {
+  String outputPath, {
+  bool forceReencode = false,
+}) {
   final args = <String>['-y', '-i', inputPath];
 
   // Accurate seek/clip: -ss and -t AFTER -i.
@@ -30,19 +35,27 @@ List<String> buildFfmpegArgs(
     args.addAll(['-t', _secs(op.clipDuration!)]);
   }
 
-  final reencodeVideo =
-      info.videoCodec != kTargetVideoCodec || op.clipsTime || op.changesSpeed;
+  // A non-yuv420p (e.g. 10-bit) pixel format reads as "h264" but is rejected by
+  // WhatsApp, and `-c:v copy` would preserve it, so it must force a re-encode.
+  final badPixelFormat =
+      info.pixelFormat != null && info.pixelFormat != kTargetPixelFormat;
+  final reencodeVideo = forceReencode ||
+      info.videoCodec != kTargetVideoCodec ||
+      badPixelFormat ||
+      op.clipsTime ||
+      op.changesSpeed;
   final hasAudio = info.audioCodec != null;
-  final reencodeAudio =
-      hasAudio && (info.audioCodec != kTargetAudioCodec || op.changesSpeed);
+  final reencodeAudio = hasAudio &&
+      (forceReencode || info.audioCodec != kTargetAudioCodec || op.changesSpeed);
 
   // Video.
   if (op.changesSpeed) {
     args.addAll(['-filter:v', 'setpts=PTS/${_factor(op.speedFactor)}']);
   }
   if (reencodeVideo) {
-    args.addAll(['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23',
-      '-pix_fmt', 'yuv420p']);
+    // Pin a WhatsApp-safe baseline: H.264 High@4.0, 8-bit yuv420p.
+    args.addAll(['-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0',
+      '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p']);
   } else {
     args.addAll(['-c:v', 'copy']);
   }

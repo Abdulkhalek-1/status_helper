@@ -42,7 +42,8 @@ class FfmpegRunner {
     for (final op in job.ops) {
       if (_cancelled) break;
       final outPath = p.join(job.outputDir, '${job.baseName}${op.suffix}.mp4');
-      final args = buildFfmpegArgs(job.info, op, job.inputPath, outPath);
+      final args = buildFfmpegArgs(job.info, op, job.inputPath, outPath,
+          forceReencode: job.forceReencode);
       final opMs = _opDurationMs(job, op);
 
       final completer = Completer<bool>();

@@ -9,11 +9,16 @@ class ConversionJob {
   final String outputDir;
   final String baseName; // output filename without suffix or extension
 
+  /// Force a WhatsApp-safe re-encode of every op even if the streams look
+  /// compatible (the "Convert anyway" path).
+  final bool forceReencode;
+
   const ConversionJob({
     required this.inputPath,
     required this.info,
     required this.ops,
     required this.outputDir,
     required this.baseName,
+    this.forceReencode = false,
   }) : assert(ops.length > 0);
 }

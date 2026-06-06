@@ -9,6 +9,13 @@ class MediaInfo {
   final int height;
   final String formatName;
 
+  /// Video pixel format, e.g. `yuv420p` (8-bit, WhatsApp-safe) or
+  /// `yuv420p10le` (10-bit, which WhatsApp rejects). Null if unknown.
+  final String? pixelFormat;
+
+  /// H.264 profile string, e.g. `High`, `Main`, `High 10`. Null if unknown.
+  final String? profile;
+
   const MediaInfo({
     required this.videoCodec,
     required this.audioCodec,
@@ -16,6 +23,8 @@ class MediaInfo {
     required this.width,
     required this.height,
     required this.formatName,
+    this.pixelFormat,
+    this.profile,
   });
 }
 
@@ -41,5 +50,7 @@ MediaInfo parseProbeJson(String jsonText) {
     width: (video['width'] as num?)?.toInt() ?? 0,
     height: (video['height'] as num?)?.toInt() ?? 0,
     formatName: '${format['format_name'] ?? ''}',
+    pixelFormat: video['pix_fmt'] == null ? null : '${video['pix_fmt']}',
+    profile: video['profile'] == null ? null : '${video['profile']}',
   );
 }

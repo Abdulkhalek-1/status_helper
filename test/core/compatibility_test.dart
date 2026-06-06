@@ -7,6 +7,8 @@ MediaInfo _info({
   String video = 'h264',
   String? audio = 'aac',
   int seconds = 30,
+  String formatName = 'mov,mp4',
+  String? pixelFormat = 'yuv420p',
 }) =>
     MediaInfo(
       videoCodec: video,
@@ -14,7 +16,8 @@ MediaInfo _info({
       duration: Duration(seconds: seconds),
       width: 720,
       height: 1280,
-      formatName: 'mov,mp4',
+      formatName: formatName,
+      pixelFormat: pixelFormat,
     );
 
 const _whatsapp = Preset(
@@ -52,5 +55,27 @@ void main() {
     final plan = buildFixPlan(_info(seconds: 150), _whatsapp);
     expect(plan.isOverLength, isTrue);
     expect(plan.overBy, const Duration(seconds: 60));
+  });
+
+  test('10-bit pixel format flags a video transcode even for h264', () {
+    final plan = buildFixPlan(_info(pixelFormat: 'yuv420p10le'), _whatsapp);
+    expect(plan.needsVideoTranscode, isTrue);
+    expect(plan.needsAnyFix, isTrue);
+  });
+
+  test('unknown pixel format is not treated as incompatible', () {
+    final plan = buildFixPlan(_info(pixelFormat: null), _whatsapp);
+    expect(plan.needsVideoTranscode, isFalse);
+  });
+
+  test('non-mp4 container flags a remux', () {
+    final plan = buildFixPlan(_info(formatName: 'matroska,webm'), _whatsapp);
+    expect(plan.needsRemux, isTrue);
+    expect(plan.needsAnyFix, isTrue);
+  });
+
+  test('mp4 container needs no remux', () {
+    final plan = buildFixPlan(_info(), _whatsapp);
+    expect(plan.needsRemux, isFalse);
   });
 }
