@@ -10,14 +10,14 @@ import 'progress_screen.dart';
 class PlanScreen extends StatefulWidget {
   final String inputPath;
   final MediaInfo info;
-  final FixPlan plan;
+
+  /// The initially selected target app; the user can change it on this screen.
   final Preset preset;
 
   const PlanScreen({
     super.key,
     required this.inputPath,
     required this.info,
-    required this.plan,
     required this.preset,
   });
 
@@ -26,17 +26,24 @@ class PlanScreen extends StatefulWidget {
 }
 
 class _PlanScreenState extends State<PlanScreen> {
+  late Preset _preset;
   LengthStrategy _strategy = LengthStrategy.split;
   Duration _trimStart = Duration.zero;
   bool _convertAnyway = false;
 
-  bool get _canSpeed =>
-      canSpeedUp(widget.info.duration, widget.preset.maxDuration);
+  @override
+  void initState() {
+    super.initState();
+    _preset = widget.preset;
+  }
 
-  String _formatSubtitle() {
+  bool get _canSpeed =>
+      canSpeedUp(widget.info.duration, _preset.maxDuration);
+
+  String _formatSubtitle(FixPlan plan) {
     final info = widget.info;
     final pix = info.pixelFormat;
-    if (widget.plan.needsVideoTranscode) {
+    if (plan.needsVideoTranscode) {
       final parts = <String>[];
       if (info.videoCodec != kTargetVideoCodec) {
         parts.add(info.videoCodec.toUpperCase());
@@ -56,14 +63,15 @@ class _PlanScreenState extends State<PlanScreen> {
   }
 
   List<OutputOp> _buildOps() {
-    if (!widget.plan.isOverLength) return passthroughOps();
+    final limit = _preset.maxDuration;
+    if (widget.info.duration <= limit) return passthroughOps();
     switch (_strategy) {
       case LengthStrategy.split:
-        return splitOps(widget.info.duration, widget.preset.maxDuration);
+        return splitOps(widget.info.duration, limit);
       case LengthStrategy.trim:
-        return trimOps(_trimStart, widget.preset.maxDuration);
+        return trimOps(_trimStart, limit);
       case LengthStrategy.speedUp:
-        return speedUpOps(widget.info.duration, widget.preset.maxDuration);
+        return speedUpOps(widget.info.duration, limit);
     }
   }
 
@@ -85,45 +93,63 @@ class _PlanScreenState extends State<PlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.plan;
-    final limit = widget.preset.maxDuration;
+    final plan = buildFixPlan(widget.info, _preset);
+    final limit = _preset.maxDuration;
     final maxTrimStart = widget.info.duration > limit
         ? (widget.info.duration - limit)
         : Duration.zero;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Fix for ${widget.preset.displayName}')),
+      appBar: AppBar(title: const Text('Prepare video')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          DropdownButtonFormField<Preset>(
+            initialValue: _preset,
+            decoration: const InputDecoration(
+              labelText: 'Target app',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (final pr in kPresets)
+                DropdownMenuItem(value: pr, child: Text(pr.displayName)),
+            ],
+            onChanged: (pr) => setState(() {
+              if (pr == null) return;
+              _preset = pr;
+              // Length limit changed; reset the over-length choices.
+              _strategy = LengthStrategy.split;
+              _trimStart = Duration.zero;
+            }),
+          ),
+          const SizedBox(height: 8),
           _findingTile(
-            icon: p.needsVideoTranscode ? Icons.build : Icons.check_circle,
+            icon: plan.needsVideoTranscode ? Icons.build : Icons.check_circle,
             title: 'Video',
-            subtitle: _formatSubtitle(),
+            subtitle: _formatSubtitle(plan),
           ),
           if (widget.info.audioCodec != null)
             _findingTile(
-              icon: p.needsAudioTranscode ? Icons.build : Icons.check_circle,
+              icon: plan.needsAudioTranscode ? Icons.build : Icons.check_circle,
               title: 'Audio',
-              subtitle: p.needsAudioTranscode
+              subtitle: plan.needsAudioTranscode
                   ? '${widget.info.audioCodec!.toUpperCase()} → will convert to AAC'
                   : 'AAC — compatible',
             ),
-          if (p.needsRemux)
+          if (plan.needsRemux)
             _findingTile(
               icon: Icons.build,
               title: 'Container',
-              subtitle:
-                  '${widget.info.formatName} → will repackage as MP4',
+              subtitle: '${widget.info.formatName} → will repackage as MP4',
             ),
           _findingTile(
-            icon: p.isOverLength ? Icons.timer : Icons.check_circle,
+            icon: plan.isOverLength ? Icons.timer : Icons.check_circle,
             title: 'Length',
-            subtitle: p.isOverLength
+            subtitle: plan.isOverLength
                 ? '${_fmt(widget.info.duration)}, over the ${limit.inSeconds}s limit'
                 : '${_fmt(widget.info.duration)}, within the limit',
           ),
-          if (p.isOverLength) ...[
+          if (plan.isOverLength) ...[
             const Divider(height: 32),
             Text('How should we shorten it?',
                 style: Theme.of(context).textTheme.titleMedium),
@@ -172,16 +198,17 @@ class _PlanScreenState extends State<PlanScreen> {
             onChanged: (v) => setState(() => _convertAnyway = v),
             title: const Text('Convert anyway'),
             subtitle: const Text(
-                'Force a WhatsApp-safe re-encode even if it looks compatible. '
-                'Try this if WhatsApp still rejects the video.'),
+                'Force a safe re-encode even if it looks compatible. '
+                'Try this if the target app still rejects the video.'),
           ),
           _detailsPanel(),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _start,
             icon: const Icon(Icons.auto_fix_high),
-            label: Text(
-                (p.needsAnyFix || _convertAnyway) ? 'Fix it' : 'Prepare for sharing'),
+            label: Text((plan.needsAnyFix || _convertAnyway)
+                ? 'Fix it'
+                : 'Prepare for sharing'),
           ),
         ],
       ),

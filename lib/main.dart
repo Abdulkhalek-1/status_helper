@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'ui/home_screen.dart';
 import 'ui/open_plan.dart';
@@ -22,6 +23,10 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
   @override
   void initState() {
     super.initState();
+    // Reading a shared video's content URI needs media read access; without it
+    // receive_sharing_intent throws natively and the share is dropped. Request
+    // it up front so shares work on subsequent launches.
+    _requestMediaPermissions();
     // A video shared while the app is already running.
     _sub = ReceiveSharingIntent.instance
         .getMediaStream()
@@ -33,20 +38,40 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
     });
   }
 
-  void _handleShared(List<SharedMediaFile> files) {
-    String? videoPath;
+  Future<void> _requestMediaPermissions() async {
+    await [Permission.videos, Permission.photos].request();
+  }
+
+  static const _videoExtensions = [
+    '.mp4', '.mov', '.mkv', '.webm', '.avi', '.3gp', '.m4v', '.ts',
+  ];
+
+  /// Picks a shared video, tolerating apps that mis-type it as a generic file.
+  String? _firstVideoPath(List<SharedMediaFile> files) {
     for (final f in files) {
-      if (f.type == SharedMediaType.video) {
-        videoPath = f.path;
-        break;
+      if (f.type == SharedMediaType.video) return f.path;
+    }
+    for (final f in files) {
+      final mime = f.mimeType ?? '';
+      final lower = f.path.toLowerCase();
+      if (mime.startsWith('video/') ||
+          _videoExtensions.any(lower.endsWith)) {
+        return f.path;
       }
     }
-    if (videoPath == null) return;
-    final path = videoPath;
+    return null;
+  }
+
+  void _handleShared(List<SharedMediaFile> files) {
+    final path = _firstVideoPath(files);
+    if (path == null) return;
     // Defer until the navigator is mounted, then open the plan directly.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = _navKey.currentState;
       final ctx = _navKey.currentContext;
-      if (ctx != null) openPlanForVideo(ctx, path);
+      if (navigator != null && ctx != null) {
+        openPlanForVideo(navigator, ScaffoldMessenger.of(ctx), path);
+      }
     });
   }
 
