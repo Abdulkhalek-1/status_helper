@@ -33,20 +33,36 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
     });
   }
 
-  void _handleShared(List<SharedMediaFile> files) {
-    String? videoPath;
+  static const _videoExtensions = [
+    '.mp4', '.mov', '.mkv', '.webm', '.avi', '.3gp', '.m4v', '.ts',
+  ];
+
+  /// Picks a shared video, tolerating apps that mis-type it as a generic file.
+  String? _firstVideoPath(List<SharedMediaFile> files) {
     for (final f in files) {
-      if (f.type == SharedMediaType.video) {
-        videoPath = f.path;
-        break;
+      if (f.type == SharedMediaType.video) return f.path;
+    }
+    for (final f in files) {
+      final mime = f.mimeType ?? '';
+      final lower = f.path.toLowerCase();
+      if (mime.startsWith('video/') ||
+          _videoExtensions.any(lower.endsWith)) {
+        return f.path;
       }
     }
-    if (videoPath == null) return;
-    final path = videoPath;
+    return null;
+  }
+
+  void _handleShared(List<SharedMediaFile> files) {
+    final path = _firstVideoPath(files);
+    if (path == null) return;
     // Defer until the navigator is mounted, then open the plan directly.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = _navKey.currentState;
       final ctx = _navKey.currentContext;
-      if (ctx != null) openPlanForVideo(ctx, path);
+      if (navigator != null && ctx != null) {
+        openPlanForVideo(navigator, ScaffoldMessenger.of(ctx), path);
+      }
     });
   }
 

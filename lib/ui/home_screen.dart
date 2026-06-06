@@ -21,7 +21,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final path = await _fileService.pickVideo();
       if (path == null) return;
       if (!mounted) return;
-      await openPlanForVideo(context, path, preset: _preset);
+      await openPlanForVideo(
+        Navigator.of(context),
+        ScaffoldMessenger.of(context),
+        path,
+        preset: _preset,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -4,16 +4,18 @@ import '../core/media_probe.dart';
 import '../core/compatibility.dart';
 import 'plan_screen.dart';
 
-/// Probes [path], builds the fix plan for [preset], and pushes the PlanScreen.
-/// Shows a SnackBar on failure. Shared by the home picker and the share intake
-/// so both entry points behave identically.
+/// Probes [path], builds the fix plan for [preset], and pushes the PlanScreen
+/// onto [navigator]. Shows a SnackBar on [messenger] if the file can't be read.
+///
+/// Takes the navigator/messenger *states* (not a BuildContext) so it works from
+/// both the home picker and the share intake — the latter only has the root
+/// navigator's own context, from which `Navigator.of` cannot find the navigator.
 Future<void> openPlanForVideo(
-  BuildContext context,
+  NavigatorState navigator,
+  ScaffoldMessengerState messenger,
   String path, {
   Preset preset = kDefaultPreset,
 }) async {
-  final navigator = Navigator.of(context);
-  final messenger = ScaffoldMessenger.of(context);
   try {
     final info = await probeMedia(path);
     final plan = buildFixPlan(info, preset);
