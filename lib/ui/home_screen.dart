@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../presets/platform_presets.dart';
 import '../services/file_service.dart';
 import 'open_plan.dart';
 
@@ -12,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _fileService = FileService();
-  Preset _preset = kDefaultPreset;
   bool _busy = false;
 
   Future<void> _pickAndAnalyze() async {
@@ -21,11 +19,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final path = await _fileService.pickVideo();
       if (path == null) return;
       if (!mounted) return;
+      // Target app is chosen on the plan screen.
       await openPlanForVideo(
         Navigator.of(context),
         ScaffoldMessenger.of(context),
         path,
-        preset: _preset,
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -44,21 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text('Make any video postable as a status.',
                 textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            DropdownButtonFormField<Preset>(
-              initialValue: _preset,
-              decoration: const InputDecoration(
-                labelText: 'Target app',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                for (final p in kPresets)
-                  DropdownMenuItem(value: p, child: Text(p.displayName)),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (p) => setState(() => _preset = p ?? _preset),
-            ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _busy ? null : _pickAndAnalyze,
