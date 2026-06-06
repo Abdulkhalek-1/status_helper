@@ -38,6 +38,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => ResultScreen(outputPaths: outputs)),
       );
+    } on ConversionException catch (e) {
+      if (!mounted) return;
+      if (e.producedOutputs.isNotEmpty) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (_) => ResultScreen(
+            outputPaths: e.producedOutputs,
+            notice:
+                'Some parts could not be converted. ${e.producedOutputs.length} part(s) were saved.',
+          ),
+        ));
+      } else {
+        setState(() => _error = e.message);
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     }

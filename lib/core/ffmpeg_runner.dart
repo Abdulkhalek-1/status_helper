@@ -9,6 +9,16 @@ import 'job.dart';
 import 'length_resolver.dart';
 import 'ffmpeg_command_builder.dart';
 
+/// Thrown when an op fails mid-run. [producedOutputs] holds the paths of any
+/// parts that completed successfully before the failure (kept on disk per spec).
+class ConversionException implements Exception {
+  final String message;
+  final List<String> producedOutputs;
+  ConversionException(this.message, this.producedOutputs);
+  @override
+  String toString() => message;
+}
+
 /// Runs a [ConversionJob], writing one MP4 per OutputOp.
 class FfmpegRunner {
   bool _cancelled = false;
@@ -59,8 +69,9 @@ class FfmpegRunner {
         break;
       }
       if (!ok) {
-        throw Exception(
+        throw ConversionException(
           'Conversion failed for ${op.suffix.isEmpty ? "video" : op.suffix}',
+          List.unmodifiable(outputs),
         );
       }
       outputs.add(outPath);

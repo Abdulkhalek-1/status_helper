@@ -5,7 +5,8 @@ import '../services/share_service.dart';
 
 class ResultScreen extends StatefulWidget {
   final List<String> outputPaths;
-  const ResultScreen({super.key, required this.outputPaths});
+  final String? notice;
+  const ResultScreen({super.key, required this.outputPaths, this.notice});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -49,6 +50,23 @@ class _ResultScreenState extends State<ResultScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (widget.notice != null)
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Icon(
+                  Icons.warning_amber_rounded,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+                title: Text(
+                  widget.notice!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
           ListTile(
             leading: Icon(_saved ? Icons.check_circle : Icons.hourglass_bottom),
             title: Text(_saved ? 'Saved to gallery' : 'Saving to gallery…'),
