@@ -22,12 +22,18 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[share] initState: registering listeners');
     // A video shared while the app is already running.
-    _sub = ReceiveSharingIntent.instance
-        .getMediaStream()
-        .listen(_handleShared, onError: (_) {});
+    _sub = ReceiveSharingIntent.instance.getMediaStream().listen(
+      (files) {
+        debugPrint('[share] stream emitted ${files.length} file(s)');
+        _handleShared(files);
+      },
+      onError: (e) => debugPrint('[share] stream error: $e'),
+    );
     // A video that launched the app from the share sheet (cold start).
     ReceiveSharingIntent.instance.getInitialMedia().then((files) {
+      debugPrint('[share] getInitialMedia returned ${files.length} file(s)');
       _handleShared(files);
       ReceiveSharingIntent.instance.reset();
     });
@@ -54,12 +60,17 @@ class _StatusHelperAppState extends State<StatusHelperApp> {
   }
 
   void _handleShared(List<SharedMediaFile> files) {
+    for (final f in files) {
+      debugPrint('[share]   file type=${f.type} mime=${f.mimeType} path=${f.path}');
+    }
     final path = _firstVideoPath(files);
+    debugPrint('[share] chosen video path: $path');
     if (path == null) return;
     // Defer until the navigator is mounted, then open the plan directly.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final navigator = _navKey.currentState;
       final ctx = _navKey.currentContext;
+      debugPrint('[share] postFrame: navigator=${navigator != null} ctx=${ctx != null}');
       if (navigator != null && ctx != null) {
         openPlanForVideo(navigator, ScaffoldMessenger.of(ctx), path);
       }

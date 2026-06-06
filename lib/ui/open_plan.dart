@@ -17,8 +17,10 @@ Future<void> openPlanForVideo(
   Preset preset = kDefaultPreset,
 }) async {
   try {
+    debugPrint('[share] openPlanForVideo: probing $path');
     final info = await probeMedia(path);
     final plan = buildFixPlan(info, preset);
+    debugPrint('[share] openPlanForVideo: probe OK, pushing PlanScreen');
     navigator.push(MaterialPageRoute(
       builder: (_) => PlanScreen(
         inputPath: path,
@@ -28,8 +30,10 @@ Future<void> openPlanForVideo(
       ),
     ));
   } on FormatException catch (e) {
+    debugPrint('[share] openPlanForVideo: FormatException: ${e.message}');
     messenger.showSnackBar(SnackBar(content: Text(e.message)));
-  } catch (_) {
+  } catch (e) {
+    debugPrint('[share] openPlanForVideo: error: $e');
     messenger.showSnackBar(
       const SnackBar(content: Text('Something went wrong reading that video.')),
     );
